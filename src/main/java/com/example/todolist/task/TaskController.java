@@ -52,13 +52,25 @@ public class TaskController {
     }
 
     @PutMapping("/{id}")
-    public TaskModel update(@RequestBody TaskModel taskModel, @PathVariable UUID id,
+    public ResponseEntity<?> update(@RequestBody TaskModel taskModel, @PathVariable UUID id,
             HttpServletRequest request) {
+
         var task = this.taskRepository.findById(id).orElse(null);
+
+        if (task == null) {
+            return ResponseEntity.badRequest().body("Task not found");
+        }
+
+        var userId = (UUID) request.getAttribute("userId");
+
+        if (!task.getUserId().equals(userId)) {
+            return ResponseEntity.badRequest().body("You are not allowed to update this task");
+        }
 
         Utils.copyNonNullProperties(taskModel, task);
 
-        return this.taskRepository.save(task);
+        var updatedTask = this.taskRepository.save(task);
+        return ResponseEntity.ok(updatedTask);
     }
 
 }
